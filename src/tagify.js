@@ -304,6 +304,9 @@ Tagify.prototype = {
         // fixes tagify nested inside a <label> tag from getting focus when clicked on
         if( labelWrapper )
             labelWrapper.setAttribute('for', '')
+
+        if( this.settings.scrollContainer?.enabled )
+            this.initScrollContainer()
     },
 
     /**
@@ -311,6 +314,7 @@ Tagify.prototype = {
      */
     destroy(){
         this.events.unbindGlobal.call(this)
+        this.destroyScrollContainer()
         this.DOM.scope.parentNode?.removeChild(this.DOM.scope)
         this.DOM.originalInput.tabIndex = this.DOM.originalInput_tabIndex
         delete this.DOM.originalInput.__tagify
@@ -1630,6 +1634,9 @@ Tagify.prototype = {
             this.trigger('add', {tag:tagElm, index:this.getTagIdx(tagData), data:tagData})
         )
 
+        if( _s.scrollContainer?.enabled )
+            requestAnimationFrame(() => this.scrollInputIntoView('instant'))
+
         this.update()
 
 
@@ -1814,6 +1821,8 @@ Tagify.prototype = {
                 return false;
             scope.insertBefore(input, tagBefore);
             focus && input.focus();
+            if( _s.scrollContainer?.enabled )
+                this._syncScrollView()
             return true;
         }
 
@@ -1823,6 +1832,8 @@ Tagify.prototype = {
                 return false;
             nextSibling.after(input);
             focus && input.focus();
+            if( _s.scrollContainer?.enabled )
+                this._syncScrollView()
             return true;
         }
 
@@ -2172,7 +2183,121 @@ Tagify.prototype = {
         iterateChildren(this.DOM.input)
 
         return result;
-    }
+    },
+
+    initScrollContainer(){
+        const { scope } = this.DOM
+        const sc = this.settings.scrollContainer
+
+        scope.classList.add(this.settings.classNames.namespace + '--scroll-container')
+
+        if( sc.icon ){
+            const iconElm = parseHTML(`<span class="tagify__scrollIcon" aria-hidden="true">${sc.icon}</span>`)
+            scope.insertBefore(iconElm, scope.firstChild)
+            this.DOM.scrollIcon = iconElm
+        }
+
+        if( !sc.buttons ) return
+
+        const customBtns = typeof sc.buttons === 'object' ? sc.buttons : {}
+        const btnBack    = parseHTML(`<button type="button" class="tagify__scrollBtn tagify__scrollBtn--back"    aria-label="Scroll left">${customBtns.back    || '&#8592;'}</button>`)
+        const btnForward = parseHTML(`<button type="button" class="tagify__scrollBtn tagify__scrollBtn--forward" aria-label="Scroll right">${customBtns.forward || '&#8594;'}</button>`)
+
+        if( this.DOM.scrollIcon )
+            this.DOM.scrollIcon.after(btnBack)
+        else
+            scope.insertBefore(btnBack, scope.firstChild)
+
+        scope.appendChild(btnForward)
+
+        this.DOM.scrollBtnBack    = btnBack
+        this.DOM.scrollBtnForward = btnForward
+
+        this._initScrollObserver(scope)
+    },
+
+    _initScrollObserver( scope ){
+        this._scrollResizeObserver = new ResizeObserver(() => {
+            if( !scope.clientWidth ) return
+
+            if( this.DOM.scrollIcon )
+                scope.style.setProperty('--tagify-scroll-icon-width', this.DOM.scrollIcon.offsetWidth + 'px')
+
+            scope.scrollLeft = scope.scrollWidth
+            this.updateScrollButtons()
+        })
+
+        this._scrollResizeObserver.observe(scope)
+    },
+
+    destroyScrollContainer(){
+        const { scrollBtnBack, scrollBtnForward, scrollIcon, scope } = this.DOM
+
+        this._scrollResizeObserver?.disconnect()
+        delete this._scrollResizeObserver
+
+        scrollBtnBack?.remove()
+        scrollBtnForward?.remove()
+        scrollIcon?.remove()
+
+        scope.style.removeProperty('--tagify-scroll-icon-width')
+
+        delete this.DOM.scrollBtnBack
+        delete this.DOM.scrollBtnForward
+        delete this.DOM.scrollIcon
+    },
+
+    _scrollFixedWidths(){
+        const { scrollBtnBack, scrollBtnForward, scrollIcon } = this.DOM
+        const left  = (scrollIcon ? scrollIcon.offsetWidth : 0) + (scrollBtnBack ? scrollBtnBack.offsetWidth : 0)
+        const right = scrollBtnForward && !scrollBtnForward.hidden ? scrollBtnForward.offsetWidth : 0
+        return { left, right }
+    },
+
+    _syncScrollView(){
+        this.scrollInputIntoView()
+        this.updateScrollButtons()
+    },
+
+    scrollInputIntoView( behavior = 'instant' ){
+        const { scope, input } = this.DOM
+        const { left, right }  = this._scrollFixedWidths()
+
+        const inputRight   = input.offsetLeft + input.offsetWidth
+        const visibleLeft  = scope.scrollLeft + left
+        const visibleRight = scope.scrollLeft + scope.clientWidth - right
+
+        if( inputRight > visibleRight )
+            scope.scrollBy({ left: inputRight - scope.clientWidth + right - scope.scrollLeft, behavior })
+        else if( input.offsetLeft < visibleLeft )
+            scope.scrollBy({ left: input.offsetLeft - left - scope.scrollLeft, behavior })
+    },
+
+    updateScrollButtons(){
+        const { scrollBtnBack, scrollBtnForward, scope, input } = this.DOM
+        if( !scrollBtnBack ) return
+        if( !scope.clientWidth ) return
+
+        const { scrollLeft, clientWidth, scrollWidth } = scope
+        const { left: leftFixed } = this._scrollFixedWidths()
+
+        scrollBtnBack.hidden = Math.round(scrollLeft) <= 0
+
+        if( Math.round(scrollLeft + clientWidth) >= scrollWidth ){
+            scrollBtnForward.hidden = true
+            return
+        }
+
+        let lastTag = scrollBtnForward.previousElementSibling
+        if( lastTag === input ) lastTag = lastTag.previousElementSibling
+        if( lastTag && !isNodeTag.call(this, lastTag) ) lastTag = null
+
+        const visibleRight   = scrollLeft + clientWidth - scrollBtnForward.offsetWidth
+        const inputVisible   = input.offsetLeft >= scrollLeft + leftFixed && input.offsetLeft <= visibleRight
+        const lastTagClipped = lastTag && (lastTag.offsetLeft + lastTag.offsetWidth) > visibleRight
+
+        scrollBtnForward.hidden = inputVisible && !lastTagClipped
+    },
 }
 
 // legacy support for changed methods names

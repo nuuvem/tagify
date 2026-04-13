@@ -648,6 +648,120 @@
         --tags-border-color : #{$tag-invalid-color};
     }
 
+    &--scroll-container{
+        flex-wrap      : nowrap;
+        overflow-x     : auto;
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar{
+            display: none;
+        }
+
+        #{$self}__input{
+            display    : inline-block;
+            align-self : center;
+            flex-shrink: 0;
+            flex-grow  : 0;
+            flex-basis : auto;
+            min-width  : 1ch;
+            width      : auto;
+            white-space: nowrap;
+
+            & + #{$self}__tag{
+                margin-inline: 0;
+            }
+        }
+
+        &:not(:has(#{$self}__tag)) #{$self}__input{
+            flex-grow: 1;
+        }
+    }
+
+    &__scrollIcon{
+        position        : sticky;
+        left            : 0;
+        top             : 0;
+        bottom          : 0;
+        align-self      : stretch;
+        z-index         : 3;
+        flex-shrink     : 0;
+        display         : flex;
+        align-items     : center;
+        justify-content : center;
+        padding-inline  : .5em;
+        background      : var(--tags-bg, white);
+        pointer-events  : none;
+
+        svg, img{
+            display : block;
+            width   : 1em;
+            height  : 1em;
+        }
+    }
+
+    &__scrollBtn{
+        position        : sticky;
+        top             : 0;
+        bottom          : 0;
+        align-self      : stretch;
+        z-index         : 1;
+        flex-shrink     : 0;
+        display         : flex;
+        overflow        : visible;
+
+        &[hidden]{ display: none; }
+        align-items     : center;
+        justify-content : center;
+        width           : 1.6em;
+        padding         : 0;
+        border          : none;
+        background      : none;
+        cursor          : pointer;
+        color           : inherit;
+        pointer-events  : all;
+
+        svg, img{
+            display : block;
+            width   : 1em;
+            height  : 1em;
+            position: relative;
+            z-index : 1;
+        }
+
+        &--back{
+            left      : var(--tagify-scroll-icon-width, 0px);
+            z-index   : 2;
+            
+            &::after{
+                content   : '';
+                position  : absolute;
+                top       : 0;
+                bottom    : 0;
+                left      : 0;
+                width     : calc(100% + 2em);
+                background: linear-gradient(to right, var(--tags-bg, white) 0%, var(--tags-bg, white) 50%, transparent 100%);
+                pointer-events: none;
+                z-index   : 0;
+            }
+        }
+
+        &--forward{
+            right     : 0;
+
+            &::before{
+                content   : '';
+                position  : absolute;
+                top       : 0;
+                bottom    : 0;
+                right     : 0;
+                width     : calc(100% + 2em);
+                background: linear-gradient(to left, var(--tags-bg, white) 0%, var(--tags-bg, white) 50%, transparent 100%);
+                pointer-events: none;
+                z-index   : 0;
+            }
+        }
+    }
+
     // Since the dropdown is an external element, which is positioned directly on the body element
     // it cannot inherit the CSS variables applied on the ".Tagify" element
     &__dropdown{
