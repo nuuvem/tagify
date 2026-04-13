@@ -1,7 +1,7 @@
 {
-  "name": "@yaireo/tagify",
+  "name": "@nuuvem/tagify",
   "version": "4.37.0",
-  "homepage": "https://github.com/yairEO/tagify",
+  "homepage": "https://github.com/nuuvem/tagify",
   "description": "lightweight, efficient Tags input component in Vanilla JS / React / Angular [super customizable, tiny size & top performance]",
   "keywords": [
     "tags",
@@ -37,7 +37,10 @@
   "jest": {
     "preset": "jest-puppeteer"
   },
-  "author": "Yair Even-Or <vsync.design@gmail.com>",
+  "author": "Nuuvem <developers@nuuvem.com>",
+  "contributors": [
+    "Yair Even-Or <vsync.design@gmail.com>"
+  ],
   "main": "./dist/tagify.js",
   "exports": {
     ".": {
@@ -59,10 +62,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yairEO/tagify.git"
+    "url": "git+https://github.com/nuuvem/tagify.git"
   },
   "bugs": {
-    "url": "https://github.com/yaireo/tagify/issues"
+    "url": "https://github.com/nuuvem/tagify/issues"
   },
   "files": [
     "/dist",
